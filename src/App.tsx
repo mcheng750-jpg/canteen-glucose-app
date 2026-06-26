@@ -216,6 +216,7 @@ function App() {
           <ShieldCheck size={14} />
           数据仅供个人健康管理参考，不构成医疗建议
         </div>
+        <div className="install-tip">添加到主屏幕后可全屏使用</div>
       </section>
 
       {selectedStall && (

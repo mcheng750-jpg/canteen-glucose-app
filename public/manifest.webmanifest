@@ -1,0 +1,19 @@
+{
+  "name": "食堂血糖参考地图",
+  "short_name": "食堂地图",
+  "description": "公司食堂血糖参考地图",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#dff3ff",
+  "theme_color": "#dff3ff",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

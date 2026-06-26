@@ -11,6 +11,7 @@ body,
 #root {
   width: 100%;
   height: 100%;
+  height: 100svh;
   margin: 0;
   overflow: hidden;
   user-select: none;
@@ -35,13 +36,23 @@ textarea {
   grid-template-columns: minmax(0, 1fr);
   width: 100vw;
   height: 100vh;
-  min-height: 430px;
+  height: 100svh;
+  min-height: 0;
   background:
     radial-gradient(circle at 18% 18%, rgba(255, 236, 184, 0.42), transparent 34%),
     radial-gradient(circle at 72% 24%, rgba(210, 163, 102, 0.18), transparent 30%),
     linear-gradient(180deg, #fff4e3 0%, #e2d2ba 100%);
   user-select: none;
   -webkit-user-select: none;
+}
+
+@supports (height: 100dvh) {
+  html,
+  body,
+  #root,
+  .app-shell {
+    height: 100dvh;
+  }
 }
 
 .app-shell.panel-open {
@@ -501,6 +512,30 @@ h1 {
   bottom: 14px;
   color: #64748b;
   font-weight: 600;
+}
+
+.install-tip {
+  position: absolute;
+  z-index: 6;
+  right: 18px;
+  bottom: 54px;
+  display: none;
+  padding: 7px 10px;
+  border: 1px solid rgba(144, 108, 62, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 250, 238, 0.82);
+  box-shadow: 0 8px 20px rgba(84, 58, 30, 0.12);
+  color: #7b5b31;
+  font-size: 11px;
+  font-weight: 850;
+  backdrop-filter: blur(10px);
+  pointer-events: none;
+}
+
+@media (display-mode: standalone) {
+  .install-tip {
+    display: none !important;
+  }
 }
 
 .stall-panel {
@@ -2100,6 +2135,395 @@ h1 {
 
   .hud-left {
     bottom: 48px;
+  }
+}
+
+@media (max-width: 980px), (max-height: 560px) {
+  .top-bar {
+    top: max(8px, env(safe-area-inset-top));
+    left: max(8px, env(safe-area-inset-left));
+    right: max(8px, env(safe-area-inset-right));
+    gap: 8px;
+  }
+
+  .top-bar > div:first-child {
+    padding: 7px 12px 8px;
+    border-radius: 14px;
+    box-shadow:
+      0 5px 0 rgba(176, 112, 36, 0.12),
+      0 10px 24px rgba(96, 62, 25, 0.1),
+      inset 0 0 0 3px rgba(255, 255, 255, 0.38);
+  }
+
+  .top-bar > div:first-child::before {
+    inset: 4px;
+    border-radius: 10px;
+  }
+
+  .top-bar > div:first-child::after {
+    right: 10px;
+    top: 10px;
+    width: 7px;
+    height: 7px;
+    box-shadow: -11px 14px 0 #8ec36a, 0 14px 0 #d56f58;
+  }
+
+  .eyebrow {
+    gap: 4px;
+    font-size: 10px;
+  }
+
+  .eyebrow svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  h1 {
+    margin-top: 2px;
+    font-size: clamp(17px, 3.3vw, 22px);
+  }
+
+  .top-actions {
+    gap: 6px;
+    align-items: flex-start;
+  }
+
+  .game-entry {
+    height: 34px;
+    gap: 5px;
+    padding: 0 9px;
+    border-radius: 10px;
+    font-size: 12px;
+  }
+
+  .game-entry svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .metric {
+    min-width: 60px;
+    padding: 5px 8px;
+    border-radius: 9px;
+  }
+
+  .metric span {
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .metric small {
+    font-size: 10px;
+  }
+
+  .icon-button {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+  }
+
+  .hud-left {
+    left: max(8px, env(safe-area-inset-left));
+    bottom: max(8px, env(safe-area-inset-bottom));
+    gap: 6px;
+    transform: scale(0.86);
+    transform-origin: left bottom;
+  }
+
+  .legend {
+    max-width: 310px;
+    padding: 7px 8px;
+    gap: 6px;
+  }
+
+  .legend-item,
+  .insight-strip,
+  .privacy-note,
+  .drag-hint {
+    font-size: 10px;
+  }
+
+  .privacy-note {
+    display: none;
+  }
+
+  .install-tip {
+    right: max(8px, env(safe-area-inset-right));
+    bottom: max(8px, env(safe-area-inset-bottom));
+    display: block;
+    font-size: 10px;
+  }
+
+  .drag-hint {
+    bottom: max(7px, env(safe-area-inset-bottom));
+    padding: 6px 8px;
+    opacity: 0.82;
+  }
+
+  .app-shell.panel-open {
+    grid-template-columns: 1fr;
+  }
+
+  .stall-panel {
+    position: absolute;
+    right: max(8px, env(safe-area-inset-right));
+    bottom: max(8px, env(safe-area-inset-bottom));
+    width: min(420px, 46vw);
+    height: calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    margin: 0;
+    padding: 12px;
+    border-width: 2px;
+    border-radius: 14px;
+  }
+
+  .panel-hero {
+    gap: 8px;
+    padding: 4px 4px 10px;
+    padding-right: 44px;
+  }
+
+  .panel-icon {
+    width: 48px;
+    height: 42px;
+  }
+
+  .panel-title-block h2 {
+    font-size: 22px;
+  }
+
+  .category {
+    font-size: 10px;
+  }
+
+  .panel-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    margin: 8px 0 10px;
+    padding: 8px;
+  }
+
+  .panel-stats strong {
+    font-size: 18px;
+  }
+
+  .panel-stats span,
+  .records-heading,
+  .sort-note {
+    font-size: 10px;
+  }
+
+  .records-table {
+    font-size: 11px;
+  }
+
+  .food-card {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 8px;
+    padding: 7px;
+  }
+
+  .food-image {
+    min-width: 42px;
+    min-height: 42px;
+  }
+
+  .floating-add,
+  .camera-placeholder,
+  .panel-close {
+    display: none;
+  }
+
+  .game-popover {
+    padding: 10px;
+  }
+
+  .game-popover-card {
+    width: min(94vw, 900px);
+    max-height: calc(100dvh - 20px);
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .game-popover-card h2 {
+    font-size: 22px;
+  }
+
+  .fortune-card-stage {
+    min-height: 250px;
+  }
+
+  .fortune-card {
+    flex-basis: clamp(132px, 24vw, 180px);
+    height: clamp(205px, 35vw, 250px);
+  }
+
+  .fortune-card.picked {
+    flex-basis: clamp(210px, 36vw, 300px);
+    height: clamp(270px, 45vw, 340px);
+  }
+
+  .album-title-board {
+    margin-bottom: 12px;
+    padding: 10px 22px;
+  }
+
+  .album-title-board h2 {
+    font-size: 24px;
+  }
+
+  .album-summary-row {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 7px;
+  }
+}
+
+@media (max-width: 720px) and (orientation: landscape) {
+  .top-bar {
+    align-items: flex-start;
+  }
+
+  .game-entry span {
+    display: none;
+  }
+
+  .game-entry {
+    width: 36px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .metric {
+    min-width: 52px;
+  }
+
+  .stall-panel {
+    width: 50vw;
+  }
+
+  .drag-hint {
+    display: none;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 460px) {
+  .top-bar {
+    top: max(5px, env(safe-area-inset-top));
+    left: max(6px, env(safe-area-inset-left));
+    right: max(6px, env(safe-area-inset-right));
+  }
+
+  .top-bar > div:first-child {
+    padding: 5px 9px 6px;
+    border-width: 1px;
+    border-radius: 12px;
+  }
+
+  .top-bar > div:first-child::before {
+    inset: 3px;
+    border-radius: 9px;
+  }
+
+  .top-bar > div:first-child::after {
+    display: none;
+  }
+
+  .eyebrow {
+    font-size: 9px;
+  }
+
+  .eyebrow svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  h1 {
+    font-size: clamp(15px, 3.1vw, 19px);
+  }
+
+  .top-actions {
+    gap: 5px;
+  }
+
+  .game-entry {
+    width: 32px;
+    height: 30px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .game-entry span {
+    display: none;
+  }
+
+  .metric {
+    min-width: 48px;
+    padding: 4px 6px;
+  }
+
+  .metric span {
+    font-size: 15px;
+  }
+
+  .metric small {
+    font-size: 8px;
+  }
+
+  .icon-button {
+    width: 30px;
+    height: 30px;
+  }
+
+  .hud-left {
+    transform: scale(0.72);
+  }
+
+  .legend {
+    padding: 6px;
+  }
+
+  .insight-strip {
+    display: none;
+  }
+
+  .install-tip {
+    display: none;
+  }
+
+  .stall-panel {
+    width: min(390px, 44vw);
+    padding: 10px;
+  }
+
+  .panel-hero {
+    padding-bottom: 7px;
+  }
+
+  .panel-title-block h2 {
+    font-size: 18px;
+  }
+
+  .panel-icon {
+    width: 42px;
+    height: 36px;
+  }
+
+  .panel-stats {
+    margin: 6px 0;
+    padding: 6px;
+  }
+
+  .records-heading {
+    margin-top: 8px;
+  }
+
+  .food-card {
+    grid-template-columns: 36px minmax(0, 1fr);
+    padding: 6px;
+  }
+
+  .food-image {
+    min-width: 36px;
+    min-height: 36px;
   }
 }
 

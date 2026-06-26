@@ -42,7 +42,7 @@ export function CanteenMap({ stalls, selectedId, onSelect }: CanteenMapProps) {
     <div className="canvas-wrap">
       <Canvas
         shadows={{ type: THREE.PCFSoftShadowMap }}
-        dpr={[1, 2]}
+        dpr={[0.85, 1.35]}
         gl={{ antialias: true, alpha: false }}
         camera={{ position: [0, 10.2, 12.6], fov: 37 }}
         onCreated={({ gl }) => {
@@ -61,7 +61,7 @@ export function CanteenMap({ stalls, selectedId, onSelect }: CanteenMapProps) {
           intensity={1.65}
           color="#fff1d6"
           castShadow
-          shadow-mapSize={[2048, 2048]}
+          shadow-mapSize={[1024, 1024]}
           shadow-radius={12}
           shadow-bias={-0.00012}
           shadow-camera-left={-15}
@@ -75,7 +75,7 @@ export function CanteenMap({ stalls, selectedId, onSelect }: CanteenMapProps) {
         <directionalLight position={[-5, 4, -8]} intensity={0.32} color="#dffff4" />
         <pointLight position={[-8.5, 3.4, -3]} intensity={0.42} color="#ffd37a" distance={8.4} />
         <pointLight position={[5.6, 2.8, -4.6]} intensity={0.24} color="#ffdca0" distance={7.2} />
-        <SoftShadows size={22} samples={12} focus={0.5} />
+        <SoftShadows size={22} samples={8} focus={0.5} />
         <SceneRig />
         <SkyWorld />
         <InteriorShell />
@@ -112,8 +112,13 @@ export function CanteenMap({ stalls, selectedId, onSelect }: CanteenMapProps) {
 function SceneRig() {
   const { camera, controls } = useThree();
   useEffect(() => {
-    const reset = () => {
-      camera.position.set(0, 10.2, 12.6);
+    const applyResponsiveCamera = () => {
+      const landscape = window.innerWidth > window.innerHeight;
+      const cramped = landscape && window.innerHeight < 520;
+      const wide = window.innerWidth / Math.max(window.innerHeight, 1) > 2.05;
+      const y = cramped ? 11.7 : 10.2;
+      const z = cramped ? (wide ? 15.8 : 14.6) : 12.6;
+      camera.position.set(0, y, z);
       camera.lookAt(0, 0.18, -1.0);
       if (controls && "target" in controls) {
         const orbit = controls as unknown as { target: THREE.Vector3; update: () => void };
@@ -121,8 +126,18 @@ function SceneRig() {
         orbit.update();
       }
     };
+    const reset = () => {
+      applyResponsiveCamera();
+    };
+    applyResponsiveCamera();
     window.addEventListener("reset-camera", reset);
-    return () => window.removeEventListener("reset-camera", reset);
+    window.addEventListener("resize", applyResponsiveCamera);
+    window.addEventListener("orientationchange", applyResponsiveCamera);
+    return () => {
+      window.removeEventListener("reset-camera", reset);
+      window.removeEventListener("resize", applyResponsiveCamera);
+      window.removeEventListener("orientationchange", applyResponsiveCamera);
+    };
   }, [camera, controls]);
   return null;
 }
