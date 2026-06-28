@@ -1,8 +1,8 @@
 import type { FoodItem, GlucoseLevel, Stall } from "./types";
 
 export const GLUCOSE_THRESHOLDS = {
-  lowMaxDelta: 3.2,
-  mediumMaxDelta: 4.9,
+  lowMaxDelta: 2,
+  mediumMaxDelta: 4,
   minSamplesForStall: 1
 };
 
@@ -33,7 +33,22 @@ export function getStallSampleCount(stall: Stall): number {
 export function getStallLevel(stall: Stall): GlucoseLevel {
   const sampleCount = getStallSampleCount(stall);
   if (sampleCount < GLUCOSE_THRESHOLDS.minSamplesForStall) return "insufficient";
-  return classifyDelta(averageDelta(stall));
+
+  const counts: Record<Exclude<GlucoseLevel, "insufficient">, number> = {
+    low: 0,
+    medium: 0,
+    high: 0
+  };
+
+  for (const food of stall.foods) {
+    const level = food.level === "insufficient" ? classifyDelta(food.delta) : food.level;
+    counts[level] += Math.max(food.sampleCount, 1);
+  }
+
+  if (!counts.low && !counts.medium && !counts.high) return "insufficient";
+  if (counts.high >= counts.medium && counts.high >= counts.low) return "high";
+  if (counts.medium >= counts.low) return "medium";
+  return "low";
 }
 
 export function averageDelta(stall: Stall): number {

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type React from "react";
 import { Camera, Check, Dumbbell, Filter, Leaf, Plus, Salad, Share2, Star, Utensils, X } from "lucide-react";
-import { averageDelta, getStallLevel, getStallSampleCount, levelMeta } from "../glucose";
+import { averageDelta, classifyDelta, getStallLevel, getStallSampleCount, levelMeta } from "../glucose";
 import type { NewRecordInput, Stall } from "../types";
 
 type StallPanelProps = {
@@ -24,7 +24,7 @@ export function StallPanel({ stall, showForm, onToggleForm, onSubmit, onClose }:
             foodName: food.name,
             imageTone: food.imageTone,
             note: record.note || food.note,
-            level: food.level
+            level: classifyDelta(record.delta)
           }))
         )
         .sort((a, b) => b.delta - a.delta),

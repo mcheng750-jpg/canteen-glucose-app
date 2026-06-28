@@ -1,3 +1,4 @@
+import { classifyDelta } from "../glucose";
 import type { FoodItem, FoodRecord, Stall } from "../types";
 
 const now = new Date("2026-06-18T12:30:00+08:00");
@@ -49,9 +50,7 @@ type SuppliedEntry = {
 };
 
 function classifySuppliedDelta(delta: number): FoodItem["level"] {
-  if (delta <= 3.2) return "low";
-  if (delta <= 4.9) return "medium";
-  return "high";
+  return classifyDelta(delta);
 }
 
 function avg(values: number[]) {
