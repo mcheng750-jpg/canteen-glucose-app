@@ -14,7 +14,7 @@ type CanteenMapProps = {
 const palette = {
   cream: "#f5ead8",
   counter: "#f7f4ee",
-  counterTop: "#f7f4ee",
+  counterTop: "#fff0c9",
   tile: "#ead8bd",
   grout: "#c5ad85",
   wood: "#d9b98a",
@@ -1153,12 +1153,12 @@ function CounterSideDish({ position }: { position: [number, number, number] }) {
 
 function SeatingArea() {
   const seats = [
-    [-8.8, 6.42],
-    [-5.45, 7.02],
-    [-2.05, 6.58],
-    [1.65, 7.08],
-    [5.15, 6.62],
-    [8.45, 6.18]
+    [-9.2, 7.15],
+    [-5.55, 7.15],
+    [-1.85, 7.15],
+    [1.85, 7.15],
+    [5.55, 7.15],
+    [9.2, 7.15]
   ];
   return (
     <group>
@@ -1269,6 +1269,11 @@ function ChristmasTree({ position, scale = 1 }: { position: [number, number, num
 }
 
 function PlanterStrip() {
+  const clusters = Array.from({ length: 18 }, (_, index) => ({
+    x: -10.15 + index * 1.2,
+    z: index % 2 ? 0.08 : -0.13,
+    scale: 0.9 + (index % 3) * 0.08
+  }));
   return (
     <group position={[0, 0, 7.62]}>
       <RoundedBox args={[22.2, 0.38, 0.72]} radius={0.16} smoothness={14} position={[0, 0.19, 0]} castShadow receiveShadow>
@@ -1277,36 +1282,45 @@ function PlanterStrip() {
       <RoundedBox args={[21.75, 0.1, 0.58]} radius={0.12} smoothness={10} position={[0, 0.42, 0]}>
         <meshStandardMaterial color="#8fb55b" roughness={0.86} metalness={0} />
       </RoundedBox>
-      {Array.from({ length: 38 }).map((_, index) => (
-        <group key={index} position={[-10.45 + index * 0.56, 0.48 + (index % 4) * 0.018, -0.12 + (index % 3) * 0.12]}>
-          {Array.from({ length: 5 }).map((__, leafIndex) => {
-            const angle = leafIndex * 1.22 + index * 0.18;
-            const radius = 0.08 + (leafIndex % 2) * 0.05;
+      {clusters.map((cluster, index) => (
+        <FlowerBush key={index} position={[cluster.x, 0.46, cluster.z]} scale={cluster.scale} seed={index} />
+      ))}
+    </group>
+  );
+}
+
+function FlowerBush({ position, scale = 1, seed = 0 }: { position: [number, number, number]; scale?: number; seed?: number }) {
+  return (
+    <group position={position} scale={scale}>
+      {[0, 1, 2].map((tier) => (
+        <group key={tier} position={[0, tier * 0.055, 0]}>
+          {Array.from({ length: 7 }).map((_, leafIndex) => {
+            const angle = leafIndex * 0.9 + seed * 0.27 + tier * 0.42;
+            const radius = 0.11 + (leafIndex % 3) * 0.035 - tier * 0.012;
             return (
               <mesh
                 key={leafIndex}
-                position={[Math.cos(angle) * radius, 0.07 + (leafIndex % 3) * 0.035, Math.sin(angle) * radius]}
-                rotation={[0.72, angle, 0.28]}
-                scale={[0.76, 1.34, 0.44]}
+                position={[Math.cos(angle) * radius, 0.06 + (leafIndex % 2) * 0.025, Math.sin(angle) * radius]}
+                rotation={[0.7, angle, 0.25]}
+                scale={[0.78, 1.28, 0.42]}
                 castShadow
               >
-                <sphereGeometry args={[0.12, 14, 8]} />
-                <meshStandardMaterial color={(index + leafIndex) % 3 === 0 ? "#b8d979" : (leafIndex % 2 ? "#86ba5c" : "#9fca61")} roughness={0.86} metalness={0} />
+                <sphereGeometry args={[0.13 - tier * 0.014, 14, 8]} />
+                <meshStandardMaterial color={(leafIndex + seed + tier) % 3 === 0 ? "#c5e57e" : (leafIndex % 2 ? "#8fc65c" : "#a8d66d")} roughness={0.86} metalness={0} />
               </mesh>
             );
           })}
-          {index % 2 === 0 && (
-            <group position={[0.02, 0.22, 0.02]}>
-              {[0, 1, 2].map((flowerIndex) => (
-                <mesh key={flowerIndex} position={[Math.cos(flowerIndex * 2.1) * 0.055, flowerIndex * 0.015, Math.sin(flowerIndex * 2.1) * 0.055]} castShadow>
-                  <sphereGeometry args={[0.032, 10, 6]} />
-                  <meshStandardMaterial color={flowerIndex === 1 ? "#fff8da" : "#f4d95c"} roughness={0.78} metalness={0} />
-                </mesh>
-              ))}
-            </group>
-          )}
         </group>
       ))}
+      {[0, 1, 2, 3, 4].map((flowerIndex) => {
+        const angle = flowerIndex * 1.25 + seed * 0.2;
+        return (
+          <mesh key={`flower-${flowerIndex}`} position={[Math.cos(angle) * 0.14, 0.24 + (flowerIndex % 2) * 0.03, Math.sin(angle) * 0.12]} castShadow>
+            <sphereGeometry args={[0.032, 10, 6]} />
+            <meshStandardMaterial color={flowerIndex % 2 ? "#fff9dc" : "#f4d95c"} roughness={0.78} metalness={0} />
+          </mesh>
+        );
+      })}
     </group>
   );
 }
