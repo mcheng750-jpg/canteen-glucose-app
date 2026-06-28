@@ -38,19 +38,27 @@ const levelTheme: Record<GlucoseLevel, { sign: string; border: string; text: str
 };
 
 export function CanteenMap({ stalls, selectedId, onSelect }: CanteenMapProps) {
+  const compactRenderer = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    const mobileAgent = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    return mobileAgent || window.innerWidth < 980 || window.innerHeight < 560;
+  }, []);
+
   return (
     <div className="canvas-wrap">
       <Canvas
-        shadows={{ type: THREE.PCFSoftShadowMap }}
-        dpr={[0.85, 1.35]}
-        gl={{ antialias: true, alpha: false }}
+        shadows={compactRenderer ? false : { type: THREE.PCFSoftShadowMap }}
+        dpr={compactRenderer ? [0.55, 0.9] : [0.85, 1.35]}
+        gl={{ antialias: !compactRenderer, alpha: false, powerPreference: "high-performance" }}
         camera={{ position: [0, 10.2, 12.6], fov: 37 }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
           gl.toneMappingExposure = 1.12;
           gl.outputColorSpace = THREE.SRGBColorSpace;
-          gl.shadowMap.enabled = true;
-          gl.shadowMap.type = THREE.PCFSoftShadowMap;
+          gl.shadowMap.enabled = !compactRenderer;
+          if (!compactRenderer) {
+            gl.shadowMap.type = THREE.PCFSoftShadowMap;
+          }
         }}
       >
         <color attach="background" args={["#dff3ff"]} />
@@ -60,7 +68,7 @@ export function CanteenMap({ stalls, selectedId, onSelect }: CanteenMapProps) {
           position={[-8, 12, 8]}
           intensity={1.65}
           color="#fff1d6"
-          castShadow
+          castShadow={!compactRenderer}
           shadow-mapSize={[1024, 1024]}
           shadow-radius={12}
           shadow-bias={-0.00012}
@@ -75,21 +83,23 @@ export function CanteenMap({ stalls, selectedId, onSelect }: CanteenMapProps) {
         <directionalLight position={[-5, 4, -8]} intensity={0.32} color="#dffff4" />
         <pointLight position={[-8.5, 3.4, -3]} intensity={0.42} color="#ffd37a" distance={8.4} />
         <pointLight position={[5.6, 2.8, -4.6]} intensity={0.24} color="#ffdca0" distance={7.2} />
-        <SoftShadows size={22} samples={8} focus={0.5} />
+        {!compactRenderer && <SoftShadows size={22} samples={8} focus={0.5} />}
         <SceneRig />
         <SkyWorld />
         <InteriorShell />
         <Floor />
         <WallDetails />
-        <Sunbeams />
-        <AmbientLightWash />
+        {!compactRenderer && <Sunbeams />}
+        {!compactRenderer && <AmbientLightWash />}
         {stalls.map((stall) => (
           <StallModel key={stall.id} stall={stall} selected={stall.id === selectedId} onSelect={onSelect} />
         ))}
         <SeatingArea />
         <AmbientPlants />
         <PlanterStrip />
-        <ContactShadows position={[0, 0.018, 0]} opacity={0.24} scale={31} blur={4.8} far={10} color="#8a6138" />
+        {!compactRenderer && (
+          <ContactShadows position={[0, 0.018, 0]} opacity={0.24} scale={31} blur={4.8} far={10} color="#8a6138" />
+        )}
         <OrbitControls
           makeDefault
           enablePan
@@ -371,14 +381,12 @@ function InteriorShell() {
         </RoundedBox>
         <WindowGardenView />
         <RoundedBox args={[7.74, 1.72, 0.14]} radius={0.045} smoothness={6} position={[0, 0, 0.085]}>
-          <meshPhysicalMaterial
+          <meshStandardMaterial
             color="#eafaff"
             transparent
-            opacity={0.16}
-            roughness={0.08}
+            opacity={0.24}
+            roughness={0.32}
             metalness={0}
-            transmission={0.62}
-            thickness={0.035}
             depthWrite={false}
           />
         </RoundedBox>

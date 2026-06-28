@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Activity, BookOpen, Camera, ChevronRight, Dice5, Info, MapPinned, Plus, RotateCcw, ShieldCheck, Sparkles, X } from "lucide-react";
 import { CanteenMap } from "./components/CanteenMap";
 import { StallPanel } from "./components/StallPanel";
@@ -6,6 +6,115 @@ import { Legend } from "./components/Legend";
 import { initialStalls } from "./data/stalls";
 import { averageDelta, classifyDelta, getStallLevel, getStallSampleCount } from "./glucose";
 import type { NewRecordInput, Stall } from "./types";
+import {
+  fetchMyRecords,
+  getStoredSession,
+  insertRecord,
+  isSupabaseConfigured,
+  signInWithEmail,
+  signUpWithEmail,
+  storeSession,
+  type AuthSession,
+  type CloudRecord
+} from "./lib/supabaseRest";
+
+function applyRecordToStalls(current: Stall[], stallId: string, input: NewRecordInput, options?: { id?: string; createdAt?: string; user?: string }) {
+  const delta = Number((input.after2h - input.before).toFixed(1));
+  const level = classifyDelta(delta);
+  const createdAt = options?.createdAt ?? new Date().toISOString();
+  const recordId = options?.id ?? `record-${Date.now()}`;
+  const user = options?.user ?? "匿名同事";
+
+  return current.map((stall) => {
+    if (stall.id !== stallId) return stall;
+
+    const foodName = input.foodName.trim() || "自定义餐食";
+    const foodId = foodName.toLowerCase().replace(/\s+/g, "-") || `food-${Date.now()}`;
+    const existingFood = stall.foods.find((food) => food.name === foodName);
+    const nextRecord = {
+      id: recordId,
+      user,
+      note: input.note,
+      shared: input.shared,
+      anonymous: true,
+      before: input.before,
+      after1h: input.after1h,
+      after2h: input.after2h,
+      delta,
+      portion: input.portion,
+      extraRice: input.extraRice,
+      sugaryDrink: input.sugaryDrink,
+      exercised: input.exercised,
+      createdAt
+    };
+
+    if (!existingFood) {
+      return {
+        ...stall,
+        foods: [
+          {
+            id: `${stall.id}-${foodId}`,
+            name: foodName,
+            imageTone: "#94a3b8",
+            level,
+            before: input.before,
+            after1h: input.after1h,
+            after2h: input.after2h,
+            delta,
+            sampleCount: 1,
+            note: input.note || "新提交记录",
+            records: [nextRecord]
+          },
+          ...stall.foods
+        ]
+      };
+    }
+
+    return {
+      ...stall,
+      foods: stall.foods.map((food) => {
+        if (food.id !== existingFood.id || food.records.some((record) => record.id === recordId)) return food;
+        const nextCount = food.sampleCount + 1;
+        const nextBefore = Number(((food.before * food.sampleCount + input.before) / nextCount).toFixed(1));
+        const nextAfter1h = Number(((food.after1h * food.sampleCount + input.after1h) / nextCount).toFixed(1));
+        const nextAfter2h = Number(((food.after2h * food.sampleCount + input.after2h) / nextCount).toFixed(1));
+        const nextDelta = Number((nextAfter2h - nextBefore).toFixed(1));
+        return {
+          ...food,
+          before: nextBefore,
+          after1h: nextAfter1h,
+          after2h: nextAfter2h,
+          delta: nextDelta,
+          level: classifyDelta(nextDelta),
+          sampleCount: nextCount,
+          records: [nextRecord, ...food.records]
+        };
+      })
+    };
+  });
+}
+
+function mergeCloudRecords(records: CloudRecord[]) {
+  return records.reduce((nextStalls, record) => {
+    const input: NewRecordInput = {
+      foodName: record.food_name,
+      before: Number(record.before),
+      after1h: Number(record.after1h),
+      after2h: Number(record.after2h),
+      portion: record.portion,
+      extraRice: record.extra_rice,
+      sugaryDrink: record.sugary_drink,
+      exercised: record.exercised,
+      note: record.note,
+      shared: record.shared
+    };
+    return applyRecordToStalls(nextStalls, record.stall_id, input, {
+      id: record.id,
+      createdAt: record.created_at,
+      user: "我"
+    });
+  }, initialStalls);
+}
 
 function App() {
   const [stalls, setStalls] = useState<Stall[]>(initialStalls);
@@ -14,6 +123,14 @@ function App() {
   const [activeGame, setActiveGame] = useState<"draw" | "album" | null>(null);
   const [selectedFortuneCard, setSelectedFortuneCard] = useState<string | null>(null);
   const [albumFilter, setAlbumFilter] = useState<"all" | "low" | "medium" | "high">("all");
+  const [session, setSession] = useState<AuthSession | null>(() => getStoredSession());
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authMessage, setAuthMessage] = useState("");
+  const [syncMessage, setSyncMessage] = useState("");
+  const cloudReady = isSupabaseConfigured();
 
   const selectedStall = useMemo(() => stalls.find((stall) => stall.id === selectedId) ?? null, [selectedId, stalls]);
   const overview = useMemo(() => {
@@ -76,101 +193,110 @@ function App() {
   );
   const selectedFortune = fortuneCards.find((card) => card.id === selectedFortuneCard) ?? null;
 
+  useEffect(() => {
+    storeSession(session);
+    if (!session || !cloudReady) {
+      return;
+    }
+
+    let cancelled = false;
+    setSyncMessage("正在同步云端记录...");
+    fetchMyRecords(session)
+      .then((records) => {
+        if (cancelled) return;
+        setStalls(mergeCloudRecords(records));
+        setSyncMessage(`已同步 ${records.length} 条我的记录`);
+      })
+      .catch((error: Error) => {
+        if (cancelled) return;
+        setSyncMessage(error.message);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cloudReady, session]);
+
   function openGame(game: "draw" | "album") {
     setActiveGame(game);
     setSelectedFortuneCard(null);
     if (game === "album") setAlbumFilter("all");
   }
 
-  function handleAddRecord(input: NewRecordInput) {
+  async function handleAuth(action: "sign-in" | "sign-up") {
+    if (!cloudReady) {
+      setAuthMessage("还没有配置 Supabase 环境变量。");
+      return;
+    }
+    if (!authEmail || authPassword.length < 6) {
+      setAuthMessage("请输入邮箱和至少 6 位密码。");
+      return;
+    }
+    setAuthBusy(true);
+    setAuthMessage("");
+    try {
+      const nextSession = action === "sign-in"
+        ? await signInWithEmail(authEmail, authPassword)
+        : await signUpWithEmail(authEmail, authPassword);
+      if (!nextSession) {
+        setAuthMessage("注册成功。请先去邮箱确认，然后回来登录。");
+        return;
+      }
+      setSession(nextSession);
+      setAuthOpen(false);
+      setAuthMessage("登录成功，正在同步记录。");
+    } catch (error) {
+      setAuthMessage(error instanceof Error ? error.message : "登录失败，请稍后再试。");
+    } finally {
+      setAuthBusy(false);
+    }
+  }
+
+  function handleSignOut() {
+    setSession(null);
+    setStalls(initialStalls);
+    setSyncMessage("");
+    setAuthMessage("");
+  }
+
+  async function handleAddRecord(input: NewRecordInput) {
     if (!selectedStall) return;
     const delta = Number((input.after2h - input.before).toFixed(1));
     const level = classifyDelta(delta);
-    setStalls((current) =>
-      current.map((stall) => {
-        if (stall.id !== selectedStall.id) return stall;
-        const foodId = input.foodName.trim().toLowerCase().replace(/\s+/g, "-") || `food-${Date.now()}`;
-        const existingFood = stall.foods.find((food) => food.name === input.foodName);
-        if (!existingFood) {
-          return {
-            ...stall,
-            foods: [
-              {
-                id: `${stall.id}-${foodId}`,
-                name: input.foodName || "自定义餐食",
-                imageTone: "#94a3b8",
-                level,
-                before: input.before,
-                after1h: input.after1h,
-                after2h: input.after2h,
-                delta,
-                sampleCount: 1,
-                note: input.note || "新提交记录",
-                records: [
-                  {
-                    id: `record-${Date.now()}`,
-                    user: "匿名同事",
-                    note: input.note,
-                    shared: input.shared,
-                    anonymous: true,
-                    before: input.before,
-                    after1h: input.after1h,
-                    after2h: input.after2h,
-                    delta,
-                    portion: input.portion,
-                    extraRice: input.extraRice,
-                    sugaryDrink: input.sugaryDrink,
-                    exercised: input.exercised,
-                    createdAt: new Date().toISOString()
-                  }
-                ]
-              },
-              ...stall.foods
-            ]
-          };
-        }
 
-        return {
-          ...stall,
-          foods: stall.foods.map((food) => {
-            if (food.id !== existingFood.id) return food;
-            const nextCount = food.sampleCount + 1;
-            const nextBefore = Number(((food.before * food.sampleCount + input.before) / nextCount).toFixed(1));
-            const nextAfter1h = Number(((food.after1h * food.sampleCount + input.after1h) / nextCount).toFixed(1));
-            const nextAfter2h = Number(((food.after2h * food.sampleCount + input.after2h) / nextCount).toFixed(1));
-            const nextDelta = Number((nextAfter2h - nextBefore).toFixed(1));
-            return {
-              ...food,
-              before: nextBefore,
-              after1h: nextAfter1h,
-              after2h: nextAfter2h,
-              delta: nextDelta,
-              level: classifyDelta(nextDelta),
-              sampleCount: nextCount,
-              records: [
-                {
-                  id: `record-${Date.now()}`,
-                  user: "匿名同事",
-                  note: input.note,
-                  shared: input.shared,
-                  anonymous: true,
-                  before: input.before,
-                  after1h: input.after1h,
-                  after2h: input.after2h,
-                  delta,
-                  portion: input.portion,
-                  extraRice: input.extraRice,
-                  sugaryDrink: input.sugaryDrink,
-                  exercised: input.exercised,
-                  createdAt: new Date().toISOString()
-                },
-                ...food.records
-              ]
-            };
-          })
-        };
-      })
-    );
+    if (session && cloudReady) {
+      try {
+        const created = await insertRecord(session, {
+          stall_id: selectedStall.id,
+          stall_name: selectedStall.name,
+          food_name: input.foodName.trim() || "自定义餐食",
+          before: input.before,
+          after1h: input.after1h,
+          after2h: input.after2h,
+          delta,
+          level,
+          portion: input.portion,
+          extra_rice: input.extraRice,
+          sugary_drink: input.sugaryDrink,
+          exercised: input.exercised,
+          note: input.note,
+          shared: input.shared,
+          anonymous: true
+        });
+        setStalls((current) => applyRecordToStalls(current, selectedStall.id, input, {
+          id: created.id,
+          createdAt: created.created_at,
+          user: "我"
+        }));
+        setSyncMessage("记录已保存到云端");
+      } catch (error) {
+        setSyncMessage(error instanceof Error ? error.message : "云端保存失败，已先保存在当前页面。");
+        setStalls((current) => applyRecordToStalls(current, selectedStall.id, input));
+      }
+    } else {
+      setStalls((current) => applyRecordToStalls(current, selectedStall.id, input));
+      setSyncMessage(cloudReady ? "未登录：记录已先保存在当前页面" : "未连接云端：记录已先保存在当前页面");
+    }
     setShowForm(false);
   }
 
@@ -198,6 +324,31 @@ function App() {
             <button className="icon-button" title="重置视角" onClick={() => window.dispatchEvent(new Event("reset-camera"))}>
               <RotateCcw size={18} />
             </button>
+            <div className="cloud-auth">
+              <button className={`cloud-auth-button ${session ? "signed-in" : ""}`} type="button" onClick={() => setAuthOpen((value) => !value)}>
+                <ShieldCheck size={16} />
+                <span>{session ? "已登录" : "登录"}</span>
+              </button>
+              {authOpen && (
+                <div className="cloud-auth-popover">
+                  <strong>{session ? "云端记录已开启" : "登录后同步记录"}</strong>
+                  <p>{session ? session.user.email || "当前账号" : cloudReady ? "注册或登录后，别人也能各自保存自己的血糖记录。" : "还没有配置 Supabase，先按下方说明补环境变量。"}</p>
+                  {!session ? (
+                    <>
+                      <input type="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="邮箱" />
+                      <input type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="密码，至少 6 位" />
+                      <div className="cloud-auth-actions">
+                        <button type="button" disabled={authBusy} onClick={() => handleAuth("sign-in")}>登录</button>
+                        <button type="button" disabled={authBusy} onClick={() => handleAuth("sign-up")}>注册</button>
+                      </div>
+                    </>
+                  ) : (
+                    <button className="sign-out-button" type="button" onClick={handleSignOut}>退出登录</button>
+                  )}
+                  {(authMessage || syncMessage) && <span className="cloud-auth-message">{authMessage || syncMessage}</span>}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
