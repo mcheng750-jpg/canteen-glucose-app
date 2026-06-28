@@ -1,5 +1,5 @@
 import { Canvas, useThree } from "@react-three/fiber";
-import { Billboard, ContactShadows, Html, OrbitControls, RoundedBox, SoftShadows, Text } from "@react-three/drei";
+import { Billboard, ContactShadows, OrbitControls, RoundedBox, SoftShadows, Text } from "@react-three/drei";
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { getStallLevel } from "../glucose";
@@ -675,24 +675,19 @@ function StallModel({ stall, selected, onSelect }: { stall: Stall; selected: boo
         <boxGeometry args={[Math.min(width * 0.64, isLarge ? 3.6 : 1.35), 0.032, 0.02]} />
         <meshBasicMaterial color="#fff8d6" transparent opacity={0.24} />
       </mesh>
-      <Html
-        center
-        transform
-        occlude
-        distanceFactor={7.2}
-        position={[0, 1.335, -depth * 0.245]}
+      <Text
+        position={[0, 1.335, -depth * 0.225]}
+        fontSize={Math.max(0.13, Math.min(isLarge ? 0.24 : 0.18, (width / Math.max(stall.name.length, 4)) * 0.55))}
+        color={theme.text}
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={Math.min(width * 0.78, isLarge ? 3.65 : 1.45)}
+        textAlign="center"
+        outlineWidth={0.004}
+        outlineColor="#fff7e6"
       >
-        <div
-          className="stall-sign-print"
-          style={{
-            color: theme.text,
-            width: `${Math.min(width * 68, isLarge ? 292 : 148)}px`,
-            fontSize: `${Math.max(11, Math.min(isLarge ? 19 : 15, (width / Math.max(stall.name.length, 4)) * 46))}px`
-          }}
-        >
-          {stall.name}
-        </div>
-      </Html>
+        {stall.name}
+      </Text>
 
       <FoodDisplay count={foodCount} width={width} depth={depth} category={category.icon} stallName={stall.name} />
       {isLarge && shouldShowCounterPot(stall.name, category.icon) && (
@@ -1275,7 +1270,7 @@ function PlanterStrip() {
     scale: 0.9 + (index % 3) * 0.08
   }));
   return (
-    <group position={[0, 0, 7.62]}>
+    <group position={[0, 0, 8.24]}>
       <RoundedBox args={[22.2, 0.38, 0.72]} radius={0.16} smoothness={14} position={[0, 0.19, 0]} castShadow receiveShadow>
         <WoodMaterial color="#d8b078" roughness={0.72} />
       </RoundedBox>

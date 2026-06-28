@@ -355,6 +355,8 @@ h1 {
 .canvas-wrap {
   position: absolute;
   inset: 0;
+  overflow: hidden;
+  contain: layout paint;
 }
 
 .rendered-map-wrap {
@@ -877,10 +879,16 @@ h1 {
 
 .record-form-shell {
   margin: 12px 0;
-  padding: 12px;
-  border: 1px solid rgba(201, 151, 77, 0.22);
-  border-radius: 14px;
-  background: rgba(255, 250, 238, 0.82);
+  padding: 16px;
+  border: 2px solid rgba(219, 164, 86, 0.45);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255, 236, 178, 0.65), transparent 36%),
+    linear-gradient(180deg, #fff9e9 0%, #fff1d2 100%);
+  box-shadow:
+    0 8px 0 rgba(180, 116, 49, 0.12),
+    inset 0 0 0 4px rgba(255, 255, 255, 0.38),
+    0 18px 34px rgba(105, 68, 29, 0.12);
 }
 
 .section-title {
@@ -1197,27 +1205,33 @@ h1 {
 
 .record-form {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .record-form label {
   display: grid;
-  gap: 5px;
-  color: #475569;
-  font-size: 12px;
-  font-weight: 800;
+  gap: 7px;
+  color: #5d4631;
+  font-size: 13px;
+  font-weight: 950;
+  letter-spacing: 0;
 }
 
 .record-form input,
 .record-form textarea {
   width: 100%;
-  min-height: 38px;
-  padding: 9px 10px;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
+  min-height: 46px;
+  padding: 10px 14px;
+  border: 2px solid rgba(207, 161, 101, 0.38);
+  border-radius: 14px;
   outline: none;
-  background: #fff;
-  color: #0f172a;
+  background: linear-gradient(180deg, #fffdf6, #fff9ec);
+  box-shadow:
+    inset 0 2px 4px rgba(118, 78, 35, 0.05),
+    0 2px 0 rgba(255, 255, 255, 0.5);
+  color: #24180f;
+  font-size: 16px;
+  font-weight: 900;
 }
 
 .record-form textarea {
@@ -1230,12 +1244,14 @@ h1 {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  min-height: 40px;
-  border: 1px dashed #94a3b8;
-  border-radius: 8px;
-  background: #f8fafc;
-  color: #475569;
-  font-weight: 800;
+  min-height: 50px;
+  border: 2px dashed rgba(151, 126, 94, 0.48);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 243, 214, 0.78));
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.26);
+  color: #6b4f35;
+  font-size: 15px;
+  font-weight: 950;
 }
 
 .photo-upload {
@@ -1250,10 +1266,10 @@ h1 {
 
 .photo-preview {
   width: 100%;
-  height: 78px;
+  height: 92px;
   object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 14px;
+  border: 2px solid rgba(207, 161, 101, 0.32);
 }
 
 .form-grid {
@@ -1264,12 +1280,13 @@ h1 {
 
 .record-form-note {
   margin: 0;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: #fff7ed;
-  color: #9a5b18;
+  padding: 10px 12px;
+  border: 1px solid rgba(220, 166, 77, 0.32);
+  border-radius: 14px;
+  background: rgba(255, 244, 215, 0.72);
+  color: #93611e;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 900;
   line-height: 1.45;
 }
 
@@ -1325,6 +1342,16 @@ h1 {
 .submit-button {
   min-height: 42px;
   width: 100%;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #9fd174, #6fac45);
+  box-shadow:
+    0 5px 0 #4f8b34,
+    0 12px 20px rgba(83, 126, 49, 0.22),
+    inset 0 2px 0 rgba(255, 255, 255, 0.34);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 950;
 }
 
 .floating-add,
