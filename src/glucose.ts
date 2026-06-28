@@ -1,8 +1,8 @@
 import type { FoodItem, GlucoseLevel, Stall } from "./types";
 
 export const GLUCOSE_THRESHOLDS = {
-  lowMaxDelta: 2,
-  mediumMaxDelta: 4,
+  lowMaxDelta: 3,
+  mediumMaxDelta: 5,
   minSamplesForStall: 1
 };
 
