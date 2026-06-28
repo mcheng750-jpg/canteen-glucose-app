@@ -11,7 +11,9 @@ export type FoodRecord = {
   before: number;
   after1h: number;
   after2h: number;
+  peak?: number;
   delta: number;
+  imageData?: string;
   peakTime?: number;
   portion: Portion;
   extraRice: boolean;
@@ -50,6 +52,8 @@ export type NewRecordInput = {
   before: number;
   after1h: number;
   after2h: number;
+  peak?: number;
+  imageData?: string;
   portion: Portion;
   extraRice: boolean;
   sugaryDrink: boolean;

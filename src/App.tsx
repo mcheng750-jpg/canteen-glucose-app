@@ -19,7 +19,8 @@ import {
 } from "./lib/supabaseRest";
 
 function applyRecordToStalls(current: Stall[], stallId: string, input: NewRecordInput, options?: { id?: string; createdAt?: string; user?: string }) {
-  const delta = Number((input.after2h - input.before).toFixed(1));
+  const peak = input.peak ?? Math.max(input.after1h, input.after2h);
+  const delta = Number((peak - input.before).toFixed(1));
   const level = classifyDelta(delta);
   const createdAt = options?.createdAt ?? new Date().toISOString();
   const recordId = options?.id ?? `record-${Date.now()}`;
@@ -40,7 +41,9 @@ function applyRecordToStalls(current: Stall[], stallId: string, input: NewRecord
       before: input.before,
       after1h: input.after1h,
       after2h: input.after2h,
+      peak,
       delta,
+      imageData: input.imageData,
       portion: input.portion,
       extraRice: input.extraRice,
       sugaryDrink: input.sugaryDrink,
@@ -60,6 +63,7 @@ function applyRecordToStalls(current: Stall[], stallId: string, input: NewRecord
             before: input.before,
             after1h: input.after1h,
             after2h: input.after2h,
+            peak,
             delta,
             sampleCount: 1,
             note: input.note || "新提交记录",
@@ -78,7 +82,7 @@ function applyRecordToStalls(current: Stall[], stallId: string, input: NewRecord
         const nextBefore = Number(((food.before * food.sampleCount + input.before) / nextCount).toFixed(1));
         const nextAfter1h = Number(((food.after1h * food.sampleCount + input.after1h) / nextCount).toFixed(1));
         const nextAfter2h = Number(((food.after2h * food.sampleCount + input.after2h) / nextCount).toFixed(1));
-        const nextDelta = Number((nextAfter2h - nextBefore).toFixed(1));
+        const nextDelta = Number(((food.delta * food.sampleCount + delta) / nextCount).toFixed(1));
         return {
           ...food,
           before: nextBefore,
@@ -101,6 +105,7 @@ function mergeCloudRecords(records: CloudRecord[]) {
       before: Number(record.before),
       after1h: Number(record.after1h),
       after2h: Number(record.after2h),
+      peak: Number((Number(record.before) + Number(record.delta)).toFixed(1)),
       portion: record.portion,
       extraRice: record.extra_rice,
       sugaryDrink: record.sugary_drink,
@@ -325,7 +330,8 @@ function App() {
 
   async function handleAddRecord(input: NewRecordInput) {
     if (!selectedStall) return;
-    const delta = Number((input.after2h - input.before).toFixed(1));
+    const peak = input.peak ?? Math.max(input.after1h, input.after2h);
+    const delta = Number((peak - input.before).toFixed(1));
     const level = classifyDelta(delta);
 
     if (session && cloudReady) {

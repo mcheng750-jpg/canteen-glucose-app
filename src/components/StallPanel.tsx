@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type React from "react";
-import { Camera, Check, Dumbbell, Filter, Leaf, Plus, Salad, Share2, Star, Utensils, X } from "lucide-react";
+import { Camera, Filter, Leaf, Plus, Star, Utensils, X } from "lucide-react";
 import { averageDelta, classifyDelta, getStallLevel, getStallSampleCount, levelMeta } from "../glucose";
 import type { NewRecordInput, Stall } from "../types";
 
@@ -99,13 +99,13 @@ export function StallPanel({ stall, showForm, onToggleForm, onSubmit, onClose }:
         )}
         {recordRows.map((record) => {
           const recordMeta = levelMeta[record.level];
-          const peak = Math.max(record.after1h, record.after2h);
+          const peak = record.peak ?? Math.max(record.after1h, record.after2h);
           return (
             <article className="record-table-row" key={record.id}>
               <div className="record-food-cell">
                 <div className="record-food-image" style={{ background: `linear-gradient(135deg, ${record.imageTone}, #fff8ea)` }}>
-                <Utensils size={18} />
-              </div>
+                  {record.imageData ? <img src={record.imageData} alt="" /> : <Utensils size={18} />}
+                </div>
                 <div>
                   <h3>{record.foodName}</h3>
                   <p>{record.note || "匿名同事分享"}</p>
@@ -128,11 +128,13 @@ export function StallPanel({ stall, showForm, onToggleForm, onSubmit, onClose }:
 }
 
 function RecordForm({ foods, onSubmit }: { foods: string[]; onSubmit: (input: NewRecordInput) => void }) {
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [form, setForm] = useState<NewRecordInput>({
     foodName: foods[0] ?? "",
     before: 5.6,
     after1h: 7.8,
     after2h: 7.0,
+    peak: 7.8,
     portion: "正常",
     extraRice: false,
     sugaryDrink: false,
@@ -145,12 +147,28 @@ function RecordForm({ foods, onSubmit }: { foods: string[]; onSubmit: (input: Ne
     setForm((current) => ({ ...current, [key]: value }));
   }
 
+  function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      setPhotoPreview(result || null);
+      update("imageData", result || undefined);
+    };
+    reader.readAsDataURL(file);
+  }
+
   return (
     <form
       className="record-form"
       onSubmit={(event) => {
         event.preventDefault();
-        onSubmit(form);
+        onSubmit({
+          ...form,
+          peak: form.peak ?? Math.max(form.after1h, form.after2h),
+          imageData: photoPreview ?? form.imageData
+        });
       }}
     >
       <label>
@@ -161,47 +179,23 @@ function RecordForm({ foods, onSubmit }: { foods: string[]; onSubmit: (input: Ne
         </datalist>
       </label>
 
-      <button className="upload-button" type="button">
+      <label className="photo-upload">
+        <input type="file" accept="image/*" capture="environment" onChange={handlePhotoChange} />
         <Camera size={16} />
-        上传/拍摄食物图片
-      </button>
+        <span>{photoPreview ? "已选择食物图片" : "上传/拍摄食物图片"}</span>
+        {photoPreview && <img className="photo-preview" src={photoPreview} alt="" />}
+      </label>
 
       <div className="form-grid">
-        <label>餐前<input type="number" step="0.1" value={form.before} onChange={(event) => update("before", Number(event.target.value))} /></label>
-        <label>1小时<input type="number" step="0.1" value={form.after1h} onChange={(event) => update("after1h", Number(event.target.value))} /></label>
-        <label>2小时<input type="number" step="0.1" value={form.after2h} onChange={(event) => update("after2h", Number(event.target.value))} /></label>
+        <label>餐前血糖<input type="number" step="0.1" value={form.before} onChange={(event) => update("before", Number(event.target.value))} /></label>
+        <label>餐后1小时<input type="number" step="0.1" value={form.after1h} onChange={(event) => update("after1h", Number(event.target.value))} /></label>
+        <label>餐后2小时<input type="number" step="0.1" value={form.after2h} onChange={(event) => update("after2h", Number(event.target.value))} /></label>
+        <label>餐后最高血糖<input type="number" step="0.1" value={form.peak ?? ""} onChange={(event) => update("peak", Number(event.target.value))} /></label>
       </div>
 
-      <div className="segmented">
-        {(["少量", "正常", "加量"] as const).map((portion) => (
-          <button key={portion} type="button" className={form.portion === portion ? "active" : ""} onClick={() => update("portion", portion)}>
-            {portion}
-          </button>
-        ))}
-      </div>
-
-      <div className="toggles">
-        <Toggle icon={<Salad size={15} />} label="加饭" checked={form.extraRice} onChange={(value) => update("extraRice", value)} />
-        <Toggle icon={<Share2 size={15} />} label="含糖饮料" checked={form.sugaryDrink} onChange={(value) => update("sugaryDrink", value)} />
-        <Toggle icon={<Dumbbell size={15} />} label="饭后运动" checked={form.exercised} onChange={(value) => update("exercised", value)} />
-        <Toggle icon={<Check size={15} />} label="匿名分享" checked={form.shared} onChange={(value) => update("shared", value)} />
-      </div>
-
-      <label>
-        备注
-        <textarea value={form.note} rows={2} onChange={(event) => update("note", event.target.value)} placeholder="例如：半份饭、饭后散步 20 分钟" />
-      </label>
+      <p className="record-form-note">提交后会按“餐后最高血糖 - 餐前血糖”自动判断低/中/高升糖。</p>
 
       <button className="submit-button" type="submit">提交并更新档口状态</button>
     </form>
-  );
-}
-
-function Toggle({ icon, label, checked, onChange }: { icon: React.ReactNode; label: string; checked: boolean; onChange: (checked: boolean) => void }) {
-  return (
-    <button type="button" className={`toggle ${checked ? "active" : ""}`} onClick={() => onChange(!checked)}>
-      {icon}
-      {label}
-    </button>
   );
 }

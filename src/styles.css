@@ -1011,6 +1011,13 @@ h1 {
   color: rgba(62, 43, 25, 0.56);
 }
 
+.record-food-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
 .delta-cell {
   display: grid;
   justify-items: center;
@@ -1217,7 +1224,8 @@ h1 {
   resize: none;
 }
 
-.upload-button {
+.upload-button,
+.photo-upload {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1230,10 +1238,39 @@ h1 {
   font-weight: 800;
 }
 
+.photo-upload {
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.photo-upload input {
+  display: none;
+}
+
+.photo-preview {
+  width: 100%;
+  height: 78px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+}
+
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+}
+
+.record-form-note {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fff7ed;
+  color: #9a5b18;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.45;
 }
 
 .segmented,
