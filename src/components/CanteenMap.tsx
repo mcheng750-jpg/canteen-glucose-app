@@ -1149,12 +1149,12 @@ function CounterSideDish({ position }: { position: [number, number, number] }) {
 
 function SeatingArea() {
   const seats = [
-    [-7.6, 5.6],
-    [-4.8, 6.15],
-    [-2, 5.75],
-    [1, 6.25],
-    [4.2, 5.85],
-    [7.2, 5.45]
+    [-8.8, 6.42],
+    [-5.45, 7.02],
+    [-2.05, 6.58],
+    [1.65, 7.08],
+    [5.15, 6.62],
+    [8.45, 6.18]
   ];
   return (
     <group>
@@ -1165,32 +1165,47 @@ function SeatingArea() {
       </Billboard>
       {seats.map(([x, z], index) => (
         <group key={index} position={[x, 0, z]}>
-          <RoundedBox args={[1.05, 0.16, 0.88]} radius={0.105} smoothness={12} position={[0, 0.5, 0]} castShadow receiveShadow>
+          <RoundedBox args={[1.26, 0.18, 1.0]} radius={0.14} smoothness={14} position={[0, 0.5, 0]} castShadow receiveShadow>
             <WoodMaterial color={palette.woodLight} roughness={0.64} />
           </RoundedBox>
-          <RoundedBox args={[0.88, 0.035, 0.7]} radius={0.055} smoothness={8} position={[0, 0.595, 0.01]}>
-            <meshBasicMaterial color="#ffe6ad" transparent opacity={0.18} />
+          <RoundedBox args={[1.08, 0.035, 0.82]} radius={0.08} smoothness={10} position={[0, 0.607, 0.01]}>
+            <meshBasicMaterial color="#fff0c4" transparent opacity={0.23} />
           </RoundedBox>
-          {[[-0.34, -0.28], [0.34, -0.28], [-0.34, 0.28], [0.34, 0.28]].map(([dx, dz], legIndex) => (
+          <RoundedBox args={[1.18, 0.045, 0.06]} radius={0.024} smoothness={6} position={[0, 0.61, -0.43]}>
+            <meshBasicMaterial color="#fff7df" transparent opacity={0.2} />
+          </RoundedBox>
+          {[[-0.42, -0.34], [0.42, -0.34], [-0.42, 0.34], [0.42, 0.34]].map(([dx, dz], legIndex) => (
             <mesh key={`table-leg-${legIndex}`} position={[dx, 0.28, dz]} castShadow>
-              <cylinderGeometry args={[0.065, 0.075, 0.42, 12]} />
+              <cylinderGeometry args={[0.078, 0.09, 0.43, 14]} />
               <meshStandardMaterial color={palette.wood} roughness={0.64} metalness={0} />
             </mesh>
           ))}
-          {[[-0.68, 0], [0.68, 0], [0, -0.62], [0, 0.62]].map(([dx, dz], stoolIndex) => (
+          {[[-0.82, 0], [0.82, 0], [0, -0.76], [0, 0.76]].map(([dx, dz], stoolIndex) => (
             <group key={stoolIndex} position={[dx, 0, dz]} rotation-y={stoolIndex > 1 ? Math.PI / 2 : 0}>
-              <RoundedBox args={[0.42, 0.13, 0.34]} radius={0.08} smoothness={10} position={[0, 0.29, 0]} castShadow receiveShadow>
+              <RoundedBox args={[0.48, 0.145, 0.38]} radius={0.1} smoothness={12} position={[0, 0.31, 0]} castShadow receiveShadow>
                 <WoodMaterial color={palette.woodLight} roughness={0.64} />
               </RoundedBox>
-              {[[-0.13, -0.1], [0.13, -0.1], [-0.13, 0.1], [0.13, 0.1]].map(([lx, lz], legIndex) => (
+              <RoundedBox args={[0.4, 0.025, 0.3]} radius={0.05} smoothness={8} position={[0, 0.395, 0]}>
+                <meshBasicMaterial color="#fff0bd" transparent opacity={0.17} />
+              </RoundedBox>
+              {[[-0.15, -0.12], [0.15, -0.12], [-0.15, 0.12], [0.15, 0.12]].map(([lx, lz], legIndex) => (
                 <mesh key={legIndex} position={[lx, 0.16, lz]} castShadow>
-                  <cylinderGeometry args={[0.035, 0.043, 0.24, 10]} />
+                  <cylinderGeometry args={[0.04, 0.048, 0.25, 10]} />
                   <meshStandardMaterial color={palette.wood} roughness={0.66} metalness={0} />
                 </mesh>
               ))}
+              <RoundedBox args={[0.42, 0.04, 0.08]} radius={0.03} smoothness={6} position={[0, 0.08, 0.13]}>
+                <meshStandardMaterial color="#c98a43" roughness={0.68} metalness={0} />
+              </RoundedBox>
             </group>
           ))}
           <MiniPlant position={[0.18, 0.62, -0.12]} scale={0.54} />
+          <group position={[-0.32, 0.62, 0.18]} scale={0.78}>
+            <RiceBowl />
+          </group>
+          <group position={[0.38, 0.62, 0.16]} scale={0.78}>
+            <DishPlate />
+          </group>
         </group>
       ))}
     </group>
@@ -1252,20 +1267,39 @@ function ChristmasTree({ position, scale = 1 }: { position: [number, number, num
 function PlanterStrip() {
   return (
     <group position={[0, 0, 7.62]}>
-      <RoundedBox args={[21.4, 0.34, 0.62]} radius={0.14} smoothness={12} position={[0, 0.18, 0]} castShadow receiveShadow>
-        {matte("#eadcc5", 0.82)}
+      <RoundedBox args={[22.2, 0.38, 0.72]} radius={0.16} smoothness={14} position={[0, 0.19, 0]} castShadow receiveShadow>
+        <WoodMaterial color="#d8b078" roughness={0.72} />
       </RoundedBox>
-      {Array.from({ length: 48 }).map((_, index) => (
-        <group key={index} position={[-10.35 + index * 0.44, 0.46 + (index % 3) * 0.025, -0.03 + (index % 2) * 0.13]}>
-          <mesh castShadow scale={[1.14, 0.78, 0.88]}>
-            <sphereGeometry args={[0.185, 12, 8]} />
-            <meshStandardMaterial color={index % 2 ? palette.plant : palette.plantLight} roughness={0.84} metalness={0} />
-          </mesh>
-          {index % 3 === 0 && (
-            <mesh position={[0.02, 0.12, 0.02]} castShadow>
-              <sphereGeometry args={[0.048, 10, 6]} />
-              <meshStandardMaterial color="#f6e072" roughness={0.78} metalness={0} />
-            </mesh>
+      <RoundedBox args={[21.75, 0.1, 0.58]} radius={0.12} smoothness={10} position={[0, 0.42, 0]}>
+        <meshStandardMaterial color="#8fb55b" roughness={0.86} metalness={0} />
+      </RoundedBox>
+      {Array.from({ length: 38 }).map((_, index) => (
+        <group key={index} position={[-10.45 + index * 0.56, 0.48 + (index % 4) * 0.018, -0.12 + (index % 3) * 0.12]}>
+          {Array.from({ length: 5 }).map((__, leafIndex) => {
+            const angle = leafIndex * 1.22 + index * 0.18;
+            const radius = 0.08 + (leafIndex % 2) * 0.05;
+            return (
+              <mesh
+                key={leafIndex}
+                position={[Math.cos(angle) * radius, 0.07 + (leafIndex % 3) * 0.035, Math.sin(angle) * radius]}
+                rotation={[0.72, angle, 0.28]}
+                scale={[0.76, 1.34, 0.44]}
+                castShadow
+              >
+                <sphereGeometry args={[0.12, 14, 8]} />
+                <meshStandardMaterial color={(index + leafIndex) % 3 === 0 ? "#b8d979" : (leafIndex % 2 ? "#86ba5c" : "#9fca61")} roughness={0.86} metalness={0} />
+              </mesh>
+            );
+          })}
+          {index % 2 === 0 && (
+            <group position={[0.02, 0.22, 0.02]}>
+              {[0, 1, 2].map((flowerIndex) => (
+                <mesh key={flowerIndex} position={[Math.cos(flowerIndex * 2.1) * 0.055, flowerIndex * 0.015, Math.sin(flowerIndex * 2.1) * 0.055]} castShadow>
+                  <sphereGeometry args={[0.032, 10, 6]} />
+                  <meshStandardMaterial color={flowerIndex === 1 ? "#fff8da" : "#f4d95c"} roughness={0.78} metalness={0} />
+                </mesh>
+              ))}
+            </group>
           )}
         </group>
       ))}

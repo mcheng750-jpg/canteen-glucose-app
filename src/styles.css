@@ -184,6 +184,34 @@ h1 {
   color: #355c82;
 }
 
+.bgm-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid rgba(142, 104, 52, 0.2);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 249, 229, 0.96), rgba(238, 216, 178, 0.9)),
+    #fff0cf;
+  box-shadow: 0 8px 18px rgba(117, 78, 34, 0.13), inset 0 1px 0 rgba(255, 255, 255, 0.78);
+  color: #7a5831;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.bgm-button.active {
+  border-color: rgba(88, 151, 78, 0.34);
+  background:
+    linear-gradient(180deg, rgba(240, 255, 224, 0.98), rgba(188, 224, 148, 0.92)),
+    #dcefa7;
+  color: #486f34;
+}
+
 .metric {
   min-width: 86px;
   padding: 8px 12px;
@@ -2560,6 +2588,18 @@ h1 {
   }
 
   .game-entry span {
+    display: none;
+  }
+
+  .bgm-button {
+    width: 32px;
+    height: 30px;
+    justify-content: center;
+    padding: 0;
+    border-radius: 10px;
+  }
+
+  .bgm-button span {
     display: none;
   }
 
