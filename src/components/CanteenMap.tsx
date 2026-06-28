@@ -12,18 +12,18 @@ type CanteenMapProps = {
 };
 
 const palette = {
-  cream: "#f4eadb",
-  counter: "#f1e5d2",
-  counterTop: "#fff3df",
-  tile: "#ead5b5",
-  grout: "#c9ad82",
-  wood: "#d5a363",
-  woodLight: "#e5bd83",
-  wall: "#efd9bb",
-  wallUpper: "#f8edda",
+  cream: "#f5ead8",
+  counter: "#f7f4ee",
+  counterTop: "#f7f4ee",
+  tile: "#ead8bd",
+  grout: "#c5ad85",
+  wood: "#d9b98a",
+  woodLight: "#e8c897",
+  wall: "#e8c99e",
+  wallUpper: "#f9eddc",
   glass: "#dcefed",
-  plant: "#86ba5c",
-  plantLight: "#c0dc7b",
+  plant: "#8fc65c",
+  plantLight: "#c7e57d",
   sauce: "#6f3518",
   foodOrange: "#ee8a24",
   foodYellow: "#f0c75f",
@@ -53,24 +53,22 @@ export function CanteenMap({ stalls, selectedId, onSelect }: CanteenMapProps) {
         camera={{ position: [0, 10.2, 12.6], fov: 37 }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = 1.12;
+          gl.toneMappingExposure = compactRenderer ? 1.22 : 1.3;
           gl.outputColorSpace = THREE.SRGBColorSpace;
-          gl.shadowMap.enabled = !compactRenderer;
-          if (!compactRenderer) {
-            gl.shadowMap.type = THREE.PCFSoftShadowMap;
-          }
+          gl.shadowMap.enabled = true;
+          gl.shadowMap.type = THREE.PCFSoftShadowMap;
         }}
       >
-        <color attach="background" args={["#dff3ff"]} />
-        <ambientLight intensity={0.62} color="#fff1dc" />
-        <hemisphereLight args={["#fff8ea", "#d6b98a", 0.56]} />
+        <color attach="background" args={["#e4f6ff"]} />
+        <ambientLight intensity={compactRenderer ? 0.68 : 0.74} color="#fff1dc" />
+        <hemisphereLight args={["#fff8ea", "#d6b98a", compactRenderer ? 0.64 : 0.74]} />
         <directionalLight
           position={[-8, 12, 8]}
-          intensity={1.65}
+          intensity={compactRenderer ? 1.78 : 2.12}
           color="#fff1d6"
-          castShadow={!compactRenderer}
-          shadow-mapSize={[1024, 1024]}
-          shadow-radius={12}
+          castShadow
+          shadow-mapSize={compactRenderer ? [1024, 1024] : [2048, 2048]}
+          shadow-radius={18}
           shadow-bias={-0.00012}
           shadow-camera-left={-15}
           shadow-camera-right={15}
@@ -79,10 +77,10 @@ export function CanteenMap({ stalls, selectedId, onSelect }: CanteenMapProps) {
           shadow-camera-near={1}
           shadow-camera-far={34}
         />
-        <directionalLight position={[5, 7, -5]} intensity={0.12} color="#fff7e8" />
-        <directionalLight position={[-5, 4, -8]} intensity={0.32} color="#dffff4" />
-        <pointLight position={[-8.5, 3.4, -3]} intensity={0.42} color="#ffd37a" distance={8.4} />
-        <pointLight position={[5.6, 2.8, -4.6]} intensity={0.24} color="#ffdca0" distance={7.2} />
+        <directionalLight position={[5, 7, -5]} intensity={0.08} color="#fff7e8" />
+        <directionalLight position={[-5, 4, -8]} intensity={0.24} color="#e7fff2" />
+        <pointLight position={[-8.5, 3.4, -3]} intensity={0.68} color="#ffd37a" distance={9.2} decay={2} />
+        <pointLight position={[5.6, 2.8, -4.6]} intensity={0.38} color="#ffdca0" distance={7.8} decay={2} />
         {!compactRenderer && <SoftShadows size={22} samples={8} focus={0.5} />}
         <SceneRig />
         <SkyWorld />
@@ -97,9 +95,7 @@ export function CanteenMap({ stalls, selectedId, onSelect }: CanteenMapProps) {
         <SeatingArea />
         <AmbientPlants />
         <PlanterStrip />
-        {!compactRenderer && (
-          <ContactShadows position={[0, 0.018, 0]} opacity={0.24} scale={31} blur={4.8} far={10} color="#8a6138" />
-        )}
+        <ContactShadows position={[0, 0.018, 0]} opacity={compactRenderer ? 0.14 : 0.22} scale={31} blur={7.2} far={10} color="#8a6138" />
         <OrbitControls
           makeDefault
           enablePan
@@ -186,7 +182,7 @@ function Cloud({ position, scale = 1 }: { position: [number, number, number]; sc
 }
 
 function matte(color: string, roughness = 0.78) {
-  return <meshStandardMaterial color={color} roughness={roughness} metalness={0} envMapIntensity={0.08} />;
+  return <meshStandardMaterial color={color} roughness={roughness} metalness={0} envMapIntensity={0.04} />;
 }
 
 function WoodMaterial({ color = palette.woodLight, roughness = 0.62 }: { color?: string; roughness?: number }) {
@@ -226,7 +222,7 @@ function WoodMaterial({ color = palette.woodLight, roughness = 0.62 }: { color?:
     return map;
   }, [color]);
 
-  return <meshStandardMaterial color={color} map={texture ?? undefined} roughness={roughness} metalness={0} envMapIntensity={0.06} />;
+  return <meshStandardMaterial color={color} map={texture ?? undefined} roughness={roughness} metalness={0} envMapIntensity={0.05} />;
 }
 
 function TileMaterial() {
@@ -261,7 +257,7 @@ function TileMaterial() {
     return map;
   }, []);
 
-  return <meshStandardMaterial color="#f0dec2" map={texture ?? undefined} roughness={0.58} metalness={0} envMapIntensity={0.18} />;
+  return <meshStandardMaterial color="#eedabc" map={texture ?? undefined} roughness={0.66} metalness={0} envMapIntensity={0.1} />;
 }
 
 function CeramicMaterial({ color = palette.counterTop }: { color?: string }) {
@@ -287,7 +283,7 @@ function CeramicMaterial({ color = palette.counterTop }: { color?: string }) {
     return map;
   }, [color]);
 
-  return <meshStandardMaterial color={color} map={texture ?? undefined} roughness={0.72} metalness={0} envMapIntensity={0.12} />;
+  return <meshStandardMaterial color={color} map={texture ?? undefined} roughness={0.76} metalness={0} envMapIntensity={0.06} />;
 }
 
 function WallPaintMaterial({ color = palette.wallUpper }: { color?: string }) {
@@ -570,14 +566,18 @@ function WallDetails() {
           <RoundedBox args={[0.22, 0.08, 0.08]} radius={0.025} smoothness={6} position={[0, -0.68, 0]}>
             <meshStandardMaterial color="#9a6633" roughness={0.76} metalness={0} />
           </RoundedBox>
-          <mesh position={[0, -0.02, -0.018]}>
-            <planeGeometry args={[0.82, 0.9]} />
-            <meshBasicMaterial color="#ffd37a" transparent opacity={0.14} depthWrite={false} />
+          <mesh position={[0, -0.02, -0.02]}>
+            <planeGeometry args={[1.08, 1.18]} />
+            <meshBasicMaterial color="#ffd37a" transparent opacity={0.2} depthWrite={false} />
+          </mesh>
+          <mesh position={[0, -0.02, -0.021]}>
+            <planeGeometry args={[0.62, 0.78]} />
+            <meshBasicMaterial color="#fff0ba" transparent opacity={0.24} depthWrite={false} />
           </mesh>
           <RoundedBox args={[0.38, 0.5, 0.12]} radius={0.08} smoothness={10}>
-            <meshStandardMaterial color="#fff0c7" roughness={0.62} metalness={0} emissive="#ffbd60" emissiveIntensity={0.35} />
+            <meshStandardMaterial color="#fff0c7" roughness={0.58} metalness={0} emissive="#ffbd60" emissiveIntensity={0.55} />
           </RoundedBox>
-          <pointLight position={[0, -0.06, 0.22]} intensity={0.18 + (index % 2) * 0.035} color="#ffd37a" distance={3.2} />
+          <pointLight position={[0, -0.06, 0.22]} intensity={0.28 + (index % 2) * 0.045} color="#ffd37a" distance={3.6} decay={2} />
         </group>
       ))}
       {posters.map((x, index) => (
@@ -637,9 +637,13 @@ function StallModel({ stall, selected, onSelect }: { stall: Stall; selected: boo
         <CeramicMaterial color={palette.counterTop} />
       </RoundedBox>
       <RoundedBox args={[width * 0.92, 0.05, 0.08]} radius={0.035} smoothness={8} position={[0, 0.98, -depth * 0.44]}>
-        <meshStandardMaterial color="#fff0bc" roughness={0.48} metalness={0} emissive="#ffd37a" emissiveIntensity={0.24} />
+        <meshStandardMaterial color="#fff0bc" roughness={0.6} metalness={0} emissive="#ffd37a" emissiveIntensity={0.38} />
       </RoundedBox>
-      <pointLight position={[0, 0.96, -depth * 0.36]} intensity={isLarge ? 0.18 : 0.12} color="#ffd37a" distance={2.2 + width * 0.25} />
+      <mesh rotation-x={-Math.PI / 2} position={[0, 1.002, -depth * 0.12]}>
+        <planeGeometry args={[width * 0.84, depth * 0.74]} />
+        <meshBasicMaterial color="#ffe3a1" transparent opacity={isLarge ? 0.09 : 0.07} depthWrite={false} />
+      </mesh>
+      <pointLight position={[0, 1.08, -depth * 0.18]} intensity={isLarge ? 0.32 : 0.22} color="#ffd37a" distance={2.6 + width * 0.32} decay={2} />
 
       {[-1, 1].map((side) => (
         <group key={`sign-post-${side}`} position={[side * supportX, 1.02, -depth * 0.48]}>
@@ -652,11 +656,11 @@ function StallModel({ stall, selected, onSelect }: { stall: Stall; selected: boo
           </RoundedBox>
         </group>
       ))}
-      <RoundedBox args={[signOuterWidth, 0.6, 0.24]} radius={0.105} smoothness={12} position={[0, 1.28, -depth * 0.5]} castShadow receiveShadow>
-        <meshStandardMaterial color={theme.border} roughness={0.72} metalness={0} />
+      <RoundedBox args={[signOuterWidth, 0.6, 0.28]} radius={0.085} smoothness={12} position={[0, 1.28, -depth * 0.5]} castShadow receiveShadow>
+        <meshStandardMaterial color={theme.border} roughness={0.76} metalness={0} envMapIntensity={0.04} />
       </RoundedBox>
-      <RoundedBox args={[signInnerWidth, 0.45, 0.26]} radius={0.09} smoothness={12} position={[0, 1.33, -depth * 0.39]} castShadow receiveShadow>
-        <meshStandardMaterial color={theme.sign} roughness={0.78} metalness={0} />
+      <RoundedBox args={[signInnerWidth, 0.45, 0.3]} radius={0.075} smoothness={12} position={[0, 1.33, -depth * 0.39]} castShadow receiveShadow>
+        <meshStandardMaterial color={level === "insufficient" ? "#dcdcdc" : theme.sign} roughness={0.82} metalness={0} envMapIntensity={0.035} />
       </RoundedBox>
       <RoundedBox args={[Math.min(width * 0.72, isLarge ? 3.85 : 1.5), 0.06, 0.24]} radius={0.025} smoothness={8} position={[0, 1.07, -depth * 0.43]}>
         <meshStandardMaterial color="#d2c7b5" roughness={0.78} metalness={0} />
