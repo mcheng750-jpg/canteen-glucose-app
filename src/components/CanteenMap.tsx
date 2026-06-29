@@ -1270,7 +1270,7 @@ function PlanterStrip() {
     scale: 0.9 + (index % 3) * 0.08
   }));
   return (
-    <group position={[0, 0, 8.24]}>
+    <group position={[0, 0, 8.92]}>
       <RoundedBox args={[22.2, 0.38, 0.72]} radius={0.16} smoothness={14} position={[0, 0.19, 0]} castShadow receiveShadow>
         <WoodMaterial color="#d8b078" roughness={0.72} />
       </RoundedBox>

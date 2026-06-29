@@ -136,7 +136,7 @@ function App() {
   const [authMessage, setAuthMessage] = useState("");
   const [syncMessage, setSyncMessage] = useState("");
   const [bgmOn, setBgmOn] = useState(false);
-  const bgmRef = useRef<{ context: AudioContext; timer: number } | null>(null);
+  const bgmRef = useRef<HTMLAudioElement | null>(null);
   const cloudReady = isSupabaseConfigured();
 
   const selectedStall = useMemo(() => stalls.find((stall) => stall.id === selectedId) ?? null, [selectedId, stalls]);
@@ -268,8 +268,8 @@ function App() {
 
   function stopBgm() {
     if (!bgmRef.current) return;
-    window.clearInterval(bgmRef.current.timer);
-    void bgmRef.current.context.close();
+    bgmRef.current.pause();
+    bgmRef.current.currentTime = 0;
     bgmRef.current = null;
     setBgmOn(false);
   }
@@ -280,50 +280,16 @@ function App() {
       return;
     }
 
-    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!AudioContextClass) return;
-    const context = new AudioContextClass();
-    const master = context.createGain();
-    master.gain.value = 0.045;
-    master.connect(context.destination);
-
-    const notes = [523.25, 659.25, 783.99, 659.25, 587.33, 698.46, 880, 698.46];
-    let step = 0;
-
-    const playNote = () => {
-      const now = context.currentTime;
-      const osc = context.createOscillator();
-      const gain = context.createGain();
-      osc.type = "triangle";
-      osc.frequency.setValueAtTime(notes[step % notes.length], now);
-      gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(0.22, now + 0.025);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.34);
-      osc.connect(gain);
-      gain.connect(master);
-      osc.start(now);
-      osc.stop(now + 0.38);
-
-      if (step % 2 === 0) {
-        const bass = context.createOscillator();
-        const bassGain = context.createGain();
-        bass.type = "sine";
-        bass.frequency.setValueAtTime(notes[step % notes.length] / 2, now);
-        bassGain.gain.setValueAtTime(0.0001, now);
-        bassGain.gain.exponentialRampToValueAtTime(0.11, now + 0.03);
-        bassGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.52);
-        bass.connect(bassGain);
-        bassGain.connect(master);
-        bass.start(now);
-        bass.stop(now + 0.56);
-      }
-      step += 1;
-    };
-
-    playNote();
-    const timer = window.setInterval(playNote, 360);
-    bgmRef.current = { context, timer };
-    setBgmOn(true);
+    const audio = new Audio("/audio/game-bgm.mp4");
+    audio.loop = true;
+    audio.volume = 0.42;
+    bgmRef.current = audio;
+    audio.play()
+      .then(() => setBgmOn(true))
+      .catch(() => {
+        bgmRef.current = null;
+        setBgmOn(false);
+      });
   }
 
   useEffect(() => () => stopBgm(), []);
