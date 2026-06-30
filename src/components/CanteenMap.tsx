@@ -48,26 +48,27 @@ export function CanteenMap({ stalls, selectedId, onSelect }: CanteenMapProps) {
     <div className="canvas-wrap">
       <Canvas
         shadows={compactRenderer ? false : { type: THREE.PCFSoftShadowMap }}
-        dpr={compactRenderer ? [0.55, 0.9] : [0.85, 1.35]}
+        dpr={compactRenderer ? [0.45, 0.75] : [0.75, 1.1]}
+        performance={{ min: compactRenderer ? 0.35 : 0.5 }}
         gl={{ antialias: !compactRenderer, alpha: false, powerPreference: "high-performance" }}
         camera={{ position: [0, 10.2, 12.6], fov: 37 }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = compactRenderer ? 1.22 : 1.3;
+          gl.toneMappingExposure = compactRenderer ? 1.08 : 1.16;
           gl.outputColorSpace = THREE.SRGBColorSpace;
-          gl.shadowMap.enabled = true;
+          gl.shadowMap.enabled = !compactRenderer;
           gl.shadowMap.type = THREE.PCFSoftShadowMap;
         }}
       >
         <color attach="background" args={["#e4f6ff"]} />
-        <ambientLight intensity={compactRenderer ? 0.68 : 0.74} color="#fff1dc" />
-        <hemisphereLight args={["#fff8ea", "#d6b98a", compactRenderer ? 0.64 : 0.74]} />
+        <ambientLight intensity={compactRenderer ? 0.5 : 0.58} color="#fff1dc" />
+        <hemisphereLight args={["#fff8ea", "#d6b98a", compactRenderer ? 0.5 : 0.62]} />
         <directionalLight
           position={[-8, 12, 8]}
-          intensity={compactRenderer ? 1.78 : 2.12}
+          intensity={compactRenderer ? 1.36 : 1.62}
           color="#fff1d6"
           castShadow
-          shadow-mapSize={compactRenderer ? [1024, 1024] : [2048, 2048]}
+          shadow-mapSize={compactRenderer ? [512, 512] : [1024, 1024]}
           shadow-radius={18}
           shadow-bias={-0.00012}
           shadow-camera-left={-15}
@@ -77,11 +78,11 @@ export function CanteenMap({ stalls, selectedId, onSelect }: CanteenMapProps) {
           shadow-camera-near={1}
           shadow-camera-far={34}
         />
-        <directionalLight position={[5, 7, -5]} intensity={0.08} color="#fff7e8" />
-        <directionalLight position={[-5, 4, -8]} intensity={0.24} color="#e7fff2" />
-        <pointLight position={[-8.5, 3.4, -3]} intensity={0.68} color="#ffd37a" distance={9.2} decay={2} />
-        <pointLight position={[5.6, 2.8, -4.6]} intensity={0.38} color="#ffdca0" distance={7.8} decay={2} />
-        {!compactRenderer && <SoftShadows size={22} samples={8} focus={0.5} />}
+        <directionalLight position={[5, 7, -5]} intensity={0.04} color="#fff7e8" />
+        <directionalLight position={[-5, 4, -8]} intensity={0.14} color="#e7fff2" />
+        <pointLight position={[-8.5, 3.4, -3]} intensity={0.9} color="#ffd37a" distance={8.8} decay={2} />
+        <pointLight position={[5.6, 2.8, -4.6]} intensity={0.56} color="#ffd37a" distance={7.4} decay={2} />
+        {!compactRenderer && <SoftShadows size={18} samples={5} focus={0.5} />}
         <SceneRig />
         <SkyWorld />
         <InteriorShell />
@@ -95,7 +96,7 @@ export function CanteenMap({ stalls, selectedId, onSelect }: CanteenMapProps) {
         <SeatingArea />
         <AmbientPlants />
         <PlanterStrip />
-        <ContactShadows position={[0, 0.018, 0]} opacity={compactRenderer ? 0.14 : 0.22} scale={31} blur={7.2} far={10} color="#8a6138" />
+        {!compactRenderer && <ContactShadows position={[0, 0.018, 0]} opacity={0.16} scale={30} blur={6.2} far={9} color="#8a6138" />}
         <OrbitControls
           makeDefault
           enablePan

@@ -357,7 +357,7 @@ h1 {
   inset: 0;
   overflow: hidden;
   contain: layout paint;
-  filter: contrast(1.08) saturate(1.12) brightness(1.02);
+  filter: contrast(1.04) saturate(1.07);
 }
 
 .rendered-map-wrap {

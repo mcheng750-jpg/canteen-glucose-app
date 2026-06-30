@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { Activity, BookOpen, Camera, ChevronRight, Dice5, Info, MapPinned, Music2, Plus, RotateCcw, ShieldCheck, Sparkles, VolumeX, X } from "lucide-react";
 import { CanteenMap } from "./components/CanteenMap";
 import { StallPanel } from "./components/StallPanel";
@@ -11,9 +11,9 @@ import {
   getStoredSession,
   insertRecord,
   isSupabaseConfigured,
-  signInWithEmail,
-  signUpWithEmail,
+  sendPhoneOtp,
   storeSession,
+  verifyPhoneOtp,
   type AuthSession,
   type CloudRecord
 } from "./lib/supabaseRest";
@@ -130,13 +130,15 @@ function App() {
   const [albumFilter, setAlbumFilter] = useState<"all" | "low" | "medium" | "high">("all");
   const [session, setSession] = useState<AuthSession | null>(() => getStoredSession());
   const [authOpen, setAuthOpen] = useState(false);
-  const [authEmail, setAuthEmail] = useState("");
-  const [authPassword, setAuthPassword] = useState("");
+  const [authPhone, setAuthPhone] = useState("");
+  const [authCode, setAuthCode] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [syncMessage, setSyncMessage] = useState("");
   const [bgmOn, setBgmOn] = useState(false);
   const bgmRef = useRef<HTMLAudioElement | null>(null);
+  const sfxRef = useRef<AudioContext | null>(null);
   const cloudReady = isSupabaseConfigured();
 
   const selectedStall = useMemo(() => stalls.find((stall) => stall.id === selectedId) ?? null, [selectedId, stalls]);
@@ -230,30 +232,56 @@ function App() {
     if (game === "album") setAlbumFilter("all");
   }
 
-  async function handleAuth(action: "sign-in" | "sign-up") {
+  function normalizePhone(phone: string) {
+    const trimmed = phone.replace(/\s/g, "");
+    if (trimmed.startsWith("+")) return trimmed;
+    if (/^1\d{10}$/.test(trimmed)) return `+86${trimmed}`;
+    return trimmed;
+  }
+
+  async function handleSendCode() {
     if (!cloudReady) {
       setAuthMessage("还没有配置 Supabase 环境变量。");
       return;
     }
-    if (!authEmail || authPassword.length < 6) {
-      setAuthMessage("请输入邮箱和至少 6 位密码。");
+    const phone = normalizePhone(authPhone);
+    if (!/^\+\d{8,15}$/.test(phone)) {
+      setAuthMessage("请输入手机号。中国大陆手机号可以直接填 11 位。");
       return;
     }
     setAuthBusy(true);
     setAuthMessage("");
     try {
-      const nextSession = action === "sign-in"
-        ? await signInWithEmail(authEmail, authPassword)
-        : await signUpWithEmail(authEmail, authPassword);
-      if (!nextSession) {
-        setAuthMessage("注册成功。请先去邮箱确认，然后回来登录。");
-        return;
-      }
+      await sendPhoneOtp(phone);
+      setOtpSent(true);
+      setAuthPhone(phone);
+      setAuthMessage("验证码已发送，请查看短信。");
+    } catch (error) {
+      setAuthMessage(error instanceof Error ? error.message : "验证码发送失败，请检查 Supabase 短信登录配置。");
+    } finally {
+      setAuthBusy(false);
+    }
+  }
+
+  async function handleVerifyCode() {
+    if (!cloudReady) {
+      setAuthMessage("还没有配置 Supabase 环境变量。");
+      return;
+    }
+    const phone = normalizePhone(authPhone);
+    if (!/^\+\d{8,15}$/.test(phone) || authCode.trim().length < 4) {
+      setAuthMessage("请输入手机号和短信验证码。");
+      return;
+    }
+    setAuthBusy(true);
+    setAuthMessage("");
+    try {
+      const nextSession = await verifyPhoneOtp(phone, authCode.trim());
       setSession(nextSession);
       setAuthOpen(false);
       setAuthMessage("登录成功，正在同步记录。");
     } catch (error) {
-      setAuthMessage(error instanceof Error ? error.message : "登录失败，请稍后再试。");
+      setAuthMessage(error instanceof Error ? error.message : "验证码登录失败，请稍后再试。");
     } finally {
       setAuthBusy(false);
     }
@@ -264,6 +292,8 @@ function App() {
     setStalls(initialStalls);
     setSyncMessage("");
     setAuthMessage("");
+    setAuthCode("");
+    setOtpSent(false);
   }
 
   function stopBgm() {
@@ -292,7 +322,52 @@ function App() {
       });
   }
 
-  useEffect(() => () => stopBgm(), []);
+  function getSfxContext() {
+    type AudioWindow = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
+    const AudioContextCtor = window.AudioContext || (window as AudioWindow).webkitAudioContext;
+    if (!AudioContextCtor) return null;
+    if (!sfxRef.current || sfxRef.current.state === "closed") {
+      sfxRef.current = new AudioContextCtor();
+    }
+    if (sfxRef.current.state === "suspended") {
+      void sfxRef.current.resume();
+    }
+    return sfxRef.current;
+  }
+
+  function playUiSound(kind: "tap" | "success" = "tap") {
+    const context = getSfxContext();
+    if (!context) return;
+
+    const now = context.currentTime;
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = "triangle";
+    oscillator.frequency.setValueAtTime(kind === "success" ? 720 : 560, now);
+    oscillator.frequency.exponentialRampToValueAtTime(kind === "success" ? 1120 : 780, now + (kind === "success" ? 0.12 : 0.07));
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(kind === "success" ? 0.075 : 0.04, now + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + (kind === "success" ? 0.2 : 0.11));
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(now);
+    oscillator.stop(now + (kind === "success" ? 0.22 : 0.12));
+  }
+
+  function handleUiPointerDown(event: PointerEvent<HTMLElement>) {
+    if (!(event.target instanceof Element)) return;
+    if (event.target.closest("button, [role='button'], .photo-upload, input[type='file']")) {
+      playUiSound("tap");
+    }
+  }
+
+  useEffect(() => () => {
+    stopBgm();
+    const context = sfxRef.current;
+    if (context && context.state !== "closed") {
+      void context.close();
+    }
+  }, []);
 
   async function handleAddRecord(input: NewRecordInput) {
     if (!selectedStall) return;
@@ -334,10 +409,11 @@ function App() {
       setSyncMessage(cloudReady ? "未登录：记录已先保存在当前页面" : "未连接云端：记录已先保存在当前页面");
     }
     setShowForm(false);
+    playUiSound("success");
   }
 
   return (
-    <main className={`app-shell ${selectedStall ? "panel-open" : "map-only"} ${activeGame ? "game-overlay-open" : ""}`}>
+    <main className={`app-shell ${selectedStall ? "panel-open" : "map-only"} ${activeGame ? "game-overlay-open" : ""}`} onPointerDownCapture={handleUiPointerDown}>
       <section className="map-stage">
         <div className="top-bar">
           <div>
@@ -372,14 +448,14 @@ function App() {
               {authOpen && (
                 <div className="cloud-auth-popover">
                   <strong>{session ? "云端记录已开启" : "登录后同步记录"}</strong>
-                  <p>{session ? session.user.email || "当前账号" : cloudReady ? "注册或登录后，别人也能各自保存自己的血糖记录。" : "还没有配置 Supabase，先按下方说明补环境变量。"}</p>
+                  <p>{session ? session.user.phone || session.user.email || "当前账号" : cloudReady ? "用手机号验证码登录，记录会同步到自己的账号。" : "还没有配置 Supabase，先按下方说明补环境变量。"}</p>
                   {!session ? (
                     <>
-                      <input type="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="邮箱" />
-                      <input type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="密码，至少 6 位" />
+                      <input type="tel" value={authPhone} onChange={(event) => setAuthPhone(event.target.value)} placeholder="手机号，例如 13800138000" />
+                      {otpSent && <input inputMode="numeric" value={authCode} onChange={(event) => setAuthCode(event.target.value)} placeholder="短信验证码" />}
                       <div className="cloud-auth-actions">
-                        <button type="button" disabled={authBusy} onClick={() => handleAuth("sign-in")}>登录</button>
-                        <button type="button" disabled={authBusy} onClick={() => handleAuth("sign-up")}>注册</button>
+                        <button type="button" disabled={authBusy} onClick={handleSendCode}>{otpSent ? "重新发送" : "获取验证码"}</button>
+                        <button type="button" disabled={authBusy || !otpSent} onClick={handleVerifyCode}>验证码登录</button>
                       </div>
                     </>
                   ) : (

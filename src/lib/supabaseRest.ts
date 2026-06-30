@@ -9,6 +9,7 @@ export type AuthSession = {
   user: {
     id: string;
     email?: string;
+    phone?: string;
   };
 };
 
@@ -39,7 +40,14 @@ type AuthResponse = {
   user?: {
     id: string;
     email?: string;
+    phone?: string;
   };
+  msg?: string;
+  error_description?: string;
+};
+
+type OtpResponse = {
+  message_id?: string;
   msg?: string;
   error_description?: string;
 };
@@ -117,6 +125,32 @@ export async function signInWithEmail(email: string, password: string) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({ email, password })
+  });
+  return toSession(await parseResponse<AuthResponse>(response));
+}
+
+export async function sendPhoneOtp(phone: string) {
+  const config = requireConfig();
+  const response = await fetch(`${config.supabaseUrl}/auth/v1/otp`, {
+    method: "POST",
+    headers: {
+      apikey: config.supabaseAnonKey,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ phone, channel: "sms", create_user: true })
+  });
+  await parseResponse<OtpResponse>(response);
+}
+
+export async function verifyPhoneOtp(phone: string, token: string) {
+  const config = requireConfig();
+  const response = await fetch(`${config.supabaseUrl}/auth/v1/verify`, {
+    method: "POST",
+    headers: {
+      apikey: config.supabaseAnonKey,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ phone, token, type: "sms" })
   });
   return toSession(await parseResponse<AuthResponse>(response));
 }
