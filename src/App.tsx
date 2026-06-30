@@ -11,9 +11,9 @@ import {
   getStoredSession,
   insertRecord,
   isSupabaseConfigured,
-  sendPhoneOtp,
+  signInWithEmail,
+  signUpWithEmail,
   storeSession,
-  verifyPhoneOtp,
   type AuthSession,
   type CloudRecord
 } from "./lib/supabaseRest";
@@ -130,9 +130,8 @@ function App() {
   const [albumFilter, setAlbumFilter] = useState<"all" | "low" | "medium" | "high">("all");
   const [session, setSession] = useState<AuthSession | null>(() => getStoredSession());
   const [authOpen, setAuthOpen] = useState(false);
-  const [authPhone, setAuthPhone] = useState("");
-  const [authCode, setAuthCode] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [syncMessage, setSyncMessage] = useState("");
@@ -232,56 +231,30 @@ function App() {
     if (game === "album") setAlbumFilter("all");
   }
 
-  function normalizePhone(phone: string) {
-    const trimmed = phone.replace(/\s/g, "");
-    if (trimmed.startsWith("+")) return trimmed;
-    if (/^1\d{10}$/.test(trimmed)) return `+86${trimmed}`;
-    return trimmed;
-  }
-
-  async function handleSendCode() {
+  async function handleAuth(action: "sign-in" | "sign-up") {
     if (!cloudReady) {
       setAuthMessage("还没有配置 Supabase 环境变量。");
       return;
     }
-    const phone = normalizePhone(authPhone);
-    if (!/^\+\d{8,15}$/.test(phone)) {
-      setAuthMessage("请输入手机号。中国大陆手机号可以直接填 11 位。");
+    if (!authEmail || authPassword.length < 6) {
+      setAuthMessage("请输入邮箱和至少 6 位密码。");
       return;
     }
     setAuthBusy(true);
     setAuthMessage("");
     try {
-      await sendPhoneOtp(phone);
-      setOtpSent(true);
-      setAuthPhone(phone);
-      setAuthMessage("验证码已发送，请查看短信。");
-    } catch (error) {
-      setAuthMessage(error instanceof Error ? error.message : "验证码发送失败，请检查 Supabase 短信登录配置。");
-    } finally {
-      setAuthBusy(false);
-    }
-  }
-
-  async function handleVerifyCode() {
-    if (!cloudReady) {
-      setAuthMessage("还没有配置 Supabase 环境变量。");
-      return;
-    }
-    const phone = normalizePhone(authPhone);
-    if (!/^\+\d{8,15}$/.test(phone) || authCode.trim().length < 4) {
-      setAuthMessage("请输入手机号和短信验证码。");
-      return;
-    }
-    setAuthBusy(true);
-    setAuthMessage("");
-    try {
-      const nextSession = await verifyPhoneOtp(phone, authCode.trim());
+      const nextSession = action === "sign-in"
+        ? await signInWithEmail(authEmail, authPassword)
+        : await signUpWithEmail(authEmail, authPassword);
+      if (!nextSession) {
+        setAuthMessage("注册成功。请去邮箱确认后，再回来登录。邮件链接会回到当前线上页面。");
+        return;
+      }
       setSession(nextSession);
       setAuthOpen(false);
       setAuthMessage("登录成功，正在同步记录。");
     } catch (error) {
-      setAuthMessage(error instanceof Error ? error.message : "验证码登录失败，请稍后再试。");
+      setAuthMessage(error instanceof Error ? error.message : "登录失败，请稍后再试。");
     } finally {
       setAuthBusy(false);
     }
@@ -292,8 +265,6 @@ function App() {
     setStalls(initialStalls);
     setSyncMessage("");
     setAuthMessage("");
-    setAuthCode("");
-    setOtpSent(false);
   }
 
   function stopBgm() {
@@ -448,14 +419,14 @@ function App() {
               {authOpen && (
                 <div className="cloud-auth-popover">
                   <strong>{session ? "云端记录已开启" : "登录后同步记录"}</strong>
-                  <p>{session ? session.user.phone || session.user.email || "当前账号" : cloudReady ? "用手机号验证码登录，记录会同步到自己的账号。" : "还没有配置 Supabase，先按下方说明补环境变量。"}</p>
+                  <p>{session ? session.user.email || "当前账号" : cloudReady ? "用邮箱密码登录，记录会同步到自己的账号。" : "还没有配置 Supabase，先按下方说明补环境变量。"}</p>
                   {!session ? (
                     <>
-                      <input type="tel" value={authPhone} onChange={(event) => setAuthPhone(event.target.value)} placeholder="手机号，例如 13800138000" />
-                      {otpSent && <input inputMode="numeric" value={authCode} onChange={(event) => setAuthCode(event.target.value)} placeholder="短信验证码" />}
+                      <input type="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="邮箱" />
+                      <input type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="密码，至少 6 位" />
                       <div className="cloud-auth-actions">
-                        <button type="button" disabled={authBusy} onClick={handleSendCode}>{otpSent ? "重新发送" : "获取验证码"}</button>
-                        <button type="button" disabled={authBusy || !otpSent} onClick={handleVerifyCode}>验证码登录</button>
+                        <button type="button" disabled={authBusy} onClick={() => handleAuth("sign-in")}>登录</button>
+                        <button type="button" disabled={authBusy} onClick={() => handleAuth("sign-up")}>注册</button>
                       </div>
                     </>
                   ) : (
