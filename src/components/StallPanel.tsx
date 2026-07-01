@@ -78,7 +78,7 @@ export function StallPanel({ stall, showForm, onToggleForm, onSubmit, onClose }:
       )}
 
       <div className="section-title compact record-table-title">
-        <span>我的记录列表</span>
+        <span>档口食物记录列表</span>
         <small>按升糖幅度从高到低</small>
         <button type="button"><Filter size={14} /> 筛选</button>
       </div>
